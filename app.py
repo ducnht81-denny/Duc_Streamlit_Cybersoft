@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
 import openai
+#Libraries for Data Visualization:
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 #1. Cấu hình cơ bản cho streamlit page:
 
@@ -95,7 +99,7 @@ if st.session_state.df is not None: #Nếu đã có df thì mới thực hiện
             st.markdown(user_input)
             
         #Prepare data context with token optimization:
-        df = st.session_state.df
+        df = st.session_state.df #Gắn ngược lại DF của session vào biến df
         if len(df) > 100:
             data_context = f"""
             Data shape: {st.session_state.data_summary['shape']},
@@ -115,11 +119,27 @@ if st.session_state.df is not None: #Nếu đã có df thì mới thực hiện
         The user has uploaded a CSV file with the following information:
         {data_context}
         
+        The Data is loaded in a pandas DataFrame called `df`.
+        
         Guidelines:
-        1. Answer the user's question clearly and concisely
-        2. Focus on providing insights about the data
-        3. Be specific and helpful
+        - Answer the user's question clearly and concisely
+        - If the question requires analysis write Python code using pandas, matplotlib or seaborn.
+        - For visualization, always use plt.figure() before plotting and include plt.tight.layout()
+        - Always validate data before operations (check for nulls, data types, etc.)
+        - If you can't answer due to data limitations, explain why
+        - Keep responses focused on the data and questions asked
+        - Summarize your findings, insights, and any relevant statistics or visual trends.
+        - Focus on delivering the results and what the mean, not on how to get them.
+        - If a chart or visualization would help, display the chart in the response using matplotlib or seaborn.
+        - If a user asks for a specific visualization, display the chart in the response using matplotlib or seaborn.
+        
+        When writing code:
+        - Import statements are already done (pandas as pd, matplotlib.pyplot as plt, seaborn as sns)
+        - The dataframe is available as 'df'
+        - For plots, use plt.figure(figsize=(10,6)) for better display
+        - Always add titles and labels to plots
         """
+        
         #Generate response
         with st.chat_message("assistant"):
             with st.spinner("Analyzing your data.."):
