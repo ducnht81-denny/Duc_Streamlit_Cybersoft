@@ -67,3 +67,87 @@ with st.sidebar:
     else:
         st.info("Upload a CSV file to start analyzing!")
 
+#3. Main Chat Interface:
+if st.session_state.df is not None: #Nếu đã có df thì mới thực hiện
+    #Display chat history
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            
+    #Chat input: Nhập câu hỏi vào cho AI
+    user_input = st.chat_input("Ask a question about your data: ")
+    
+    if user_input: #Người dùng đã nhập câu hỏi vào
+        #Add user message to history
+        st.session_state.messages.append({"role":"user", "content": user_input}) #Lưu lại lịch sử người dùng đã nhập vào
+        
+        #Display user message:
+        with st.chat_message("user"):
+            st.markdown(user_input)
+            
+        #Prepare data context with token optimization:
+        df = st.session_state.df
+        if len(df) > 100:
+            data_context = f"""
+            Data shape: {st.session_state.data_summary['shape']},
+            Columns: {', '.join(st.session_state.data_summary['columns'])},
+            Data types: {st.session_state.data_summary['dtypes']},
+            Sample row: {st.session_state.data_summary['sample']},
+            Basic statistics: {st.session_state.data_summary['stats']}
+            """
+        else: #len(df) <100 -> đưa cho AI full data
+            data_context = f"""
+            Full dataset:
+            {df.to_string()}
+            """
+        #System Prompt:
+        system_prompt = f"""
+        You are a helpful data analyst assistant.
+        The user has uploaded a CSV file with the following information:
+        {data_context}
+        
+        Guidelines:
+        1. Answer the user's question clearly and concisely
+        2. Focus on providing insights about the data
+        3. Be specific and helpful
+        """
+        #Generate response
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing your data.."):
+                try: #Định nghĩa model và cấu hình AI Model
+                    response = client.chat.completions.create(
+                        model="gpt-6-luna",
+                        messages=[
+                            {"role": "system", "content": system_prompt}, #Chọn nghề và chuyên môn hóa cho AI
+                            {"role": "user", "content": user_input} #Là người dùng đặt câu hỏi cho AI
+                        ],
+                        # temperature=0.1 #0.1 -> 1: càng thấp thì ít lan man
+                        max_completion_tokens=1500 #Độ dài tối đa ~ 1500 chữ
+                    )
+                    reply = response.choices[0].message.content #Lưu kết quả phản hồi cho AI
+                    st.markdown(reply) #In ra kết quả từ AI
+                    
+                    #Save assistant reponse to history
+                    st.session_state.messages.append({"role": "assistant","content": reply})
+                    
+                except Exception as e:
+                    st.error(f"Error generation reponse: {str(e)}")
+                    st.info("Please try again or rephrase your question.")
+        
+else:
+    #No data uploaded state
+    
+    col1, col2, col3 = st.columns([1,2,1]) #Chia làm 4 phần: col1, col3 -> 25%, col2 -> 50%
+    with col2:
+        st.info("Please upload a CSV file to start")
+        
+        #Example questions:
+        st.markdown("### Example question you can ask:")
+        st.markdown("""
+            - What are the main trends in my data?
+            - Show me a correlation matrix
+            - Create a bar chart of the top 10 categories
+            - What's the average value by month?
+            - Are there any outliers in the price column?
+                    """)
+
