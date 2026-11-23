@@ -1,13 +1,20 @@
 import streamlit as st
-import pandas as pd 
+import pandas as pd
+import openai
+
+#1. Cấu hình cơ bản cho streamlit page:
 
 st.set_page_config(
     page_title= "Ask your CSV",
     page_icon= "📊",
     layout= "wide" 
 )
+#Khởi tạo OpenAI Client:
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-#Session state initialization:
+
+
+#Khởi tạo các thông số cần cho 1 section của Streamlit
 if "messages" not in st.session_state: #Nếu chưa có message ban đầu thì khởi tạo
     st.session_state.messages = []
     
@@ -16,6 +23,8 @@ if "df" not in st.session_state:
     st.session_state.df = None
 if "data_summary" not in st.session_state:
     st.session_state.data_summary = None
+
+
 
 st.title("📊 Ask your CSV")
 st.markdown("Upload your data and ask questions in plain English!")
@@ -150,4 +159,3 @@ else:
             - What's the average value by month?
             - Are there any outliers in the price column?
                     """)
-
